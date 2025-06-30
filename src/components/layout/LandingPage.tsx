@@ -249,7 +249,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <Button
             onClick={onGetStarted}
             size="lg"
-            className="bg-white text-green-600 hover:bg-gray-100 px-8 py-4 text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            className=" text-green-600 hover:bg-gray-100 px-8 py-4 text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
           >
             Join DRiSHTi SANjEEViNi Today
             <ArrowRight className="w-5 h-5 ml-2" />
