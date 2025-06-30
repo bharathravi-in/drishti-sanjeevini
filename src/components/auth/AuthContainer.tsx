@@ -198,7 +198,7 @@ export function AuthContainer() {
               {/* Toggle Animation Background */}
               <div
                 className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500 ${
-                  isLogin ? 'translate-x-0' : 'translate-x-full'
+                  isLogin ? 'translate-x-0' : 'translate-x-0'
                 }`}
               />
               
