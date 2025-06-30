@@ -1,16 +1,17 @@
 import React from 'react';
-import { Sparkles, Home, Plus, User, Search, Shield, BarChart3, MessageCircle } from 'lucide-react';
+import { Sparkles, Home, Plus, User, Search, Shield, BarChart3, MessageCircle, Crown } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { LanguageSelector } from '../ui/LanguageSelector';
 import { NotificationBell } from '../notifications/NotificationBell';
+import { SubscriptionStatus } from '../payments/SubscriptionStatus';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  currentView: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'admin' | 'analytics' | 'messages';
-  onViewChange: (view: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'admin' | 'analytics' | 'messages') => void;
+  currentView: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'admin' | 'analytics' | 'messages' | 'premium';
+  onViewChange: (view: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'admin' | 'analytics' | 'messages' | 'premium') => void;
 }
 
 export function MainLayout({ children, currentView, onViewChange }: MainLayoutProps) {
@@ -78,6 +79,15 @@ export function MainLayout({ children, currentView, onViewChange }: MainLayoutPr
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>Messages</span>
+              </Button>
+              <Button
+                variant={currentView === 'premium' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => onViewChange('premium')}
+                className="flex items-center space-x-2 rtl:space-x-reverse bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600 border-none"
+              >
+                <Crown className="w-4 h-4" />
+                <span>Premium</span>
               </Button>
               {isAdmin && (
                 <>
@@ -171,6 +181,13 @@ export function MainLayout({ children, currentView, onViewChange }: MainLayoutPr
                       <MessageCircle className="w-4 h-4" />
                       <span>Messages</span>
                     </button>
+                    <button
+                      onClick={() => onViewChange('premium')}
+                      className="w-full px-4 py-2 text-left rtl:text-right text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2 rtl:space-x-reverse"
+                    >
+                      <Crown className="w-4 h-4 text-yellow-500" />
+                      <span>Premium</span>
+                    </button>
                     {isAdmin && (
                       <>
                         <button
@@ -203,6 +220,11 @@ export function MainLayout({ children, currentView, onViewChange }: MainLayoutPr
           </div>
         </div>
       </header>
+
+      {/* Subscription Status */}
+      <div className="max-w-4xl mx-auto px-4 py-2">
+        <SubscriptionStatus />
+      </div>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">

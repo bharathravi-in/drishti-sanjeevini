@@ -1,12 +1,12 @@
 import React from 'react';
-import { Home, Plus, Search, Bell, User, MessageCircle } from 'lucide-react';
+import { Home, Plus, Search, Bell, User, MessageCircle, Crown } from 'lucide-react';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface MobileBottomNavProps {
-  currentView: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'messages';
-  onViewChange: (view: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'messages') => void;
+  currentView: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'messages' | 'premium';
+  onViewChange: (view: 'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'messages' | 'premium') => void;
 }
 
 export function MobileBottomNav({ currentView, onViewChange }: MobileBottomNavProps) {
@@ -44,6 +44,13 @@ export function MobileBottomNav({ currentView, onViewChange }: MobileBottomNavPr
       active: currentView === 'messages'
     },
     {
+      id: 'premium' as const,
+      icon: Crown,
+      label: 'Premium',
+      active: currentView === 'premium',
+      isPremium: true
+    },
+    {
       id: 'notifications' as const,
       icon: Bell,
       label: 'Notifications',
@@ -66,7 +73,7 @@ export function MobileBottomNav({ currentView, onViewChange }: MobileBottomNavPr
           <button
             key={item.id}
             onClick={() => onViewChange(item.id)}
-            className="flex flex-col items-center py-2 px-3 min-w-0 flex-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="flex flex-col items-center py-2 px-2 min-w-0 flex-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             {item.isNotification ? (
               <div className="relative">
@@ -99,7 +106,9 @@ export function MobileBottomNav({ currentView, onViewChange }: MobileBottomNavPr
               <item.icon 
                 className={`w-5 h-5 ${
                   item.active 
-                    ? 'text-green-600 dark:text-green-400' 
+                    ? item.isPremium 
+                      ? 'text-yellow-500' 
+                      : 'text-green-600 dark:text-green-400'
                     : 'text-gray-600 dark:text-gray-400'
                 }`} 
               />
@@ -107,7 +116,9 @@ export function MobileBottomNav({ currentView, onViewChange }: MobileBottomNavPr
             <span 
               className={`text-xs mt-1 truncate ${
                 item.active 
-                  ? 'text-green-600 dark:text-green-400 font-medium' 
+                  ? item.isPremium 
+                    ? 'text-yellow-500 font-medium' 
+                    : 'text-green-600 dark:text-green-400 font-medium'
                   : 'text-gray-600 dark:text-gray-400'
               }`}
             >

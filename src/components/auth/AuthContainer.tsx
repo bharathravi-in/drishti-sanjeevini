@@ -14,6 +14,9 @@ import { NotificationsList } from '../notifications/NotificationsList';
 import { AdminDashboard } from '../posts/AdminDashboard';
 import { AdminAnalytics } from '../analytics/AdminAnalytics';
 import { MessageCenter } from '../messaging/MessageCenter';
+import { PremiumFeatures } from '../payments/PremiumFeatures';
+import { PaymentSuccess } from '../payments/PaymentSuccess';
+import { PaymentCancelled } from '../payments/PaymentCancelled';
 import { LandingPage } from '../layout/LandingPage';
 import { Footer } from '../layout/Footer';
 import { TermsOfService } from '../legal/TermsOfService';
@@ -29,7 +32,41 @@ export function AuthContainer() {
   const [showLanding, setShowLanding] = useState(true);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [currentView, setCurrentView] = useState<'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'admin' | 'analytics' | 'messages'>('feed');
+  const [currentView, setCurrentView] = useState<'feed' | 'create' | 'explore' | 'notifications' | 'profile' | 'admin' | 'analytics' | 'messages' | 'premium'>('feed');
+
+  // Check for payment success/cancel in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionId = urlParams.get('session_id');
+  const paymentStatus = window.location.pathname;
+
+  // Handle payment success page
+  if (paymentStatus === '/payment-success' && sessionId) {
+    return (
+      <PaymentSuccess 
+        sessionId={sessionId}
+        onContinue={() => {
+          window.history.replaceState({}, '', '/');
+          setCurrentView('feed');
+        }}
+      />
+    );
+  }
+
+  // Handle payment cancelled page
+  if (paymentStatus === '/payment-cancelled') {
+    return (
+      <PaymentCancelled 
+        onRetry={() => {
+          window.history.replaceState({}, '', '/');
+          setCurrentView('premium');
+        }}
+        onGoBack={() => {
+          window.history.replaceState({}, '', '/');
+          setCurrentView('feed');
+        }}
+      />
+    );
+  }
 
   // Show legal pages
   if (showTerms) {
@@ -118,6 +155,12 @@ export function AuthContainer() {
           {currentView === 'messages' && (
             <div className="space-y-6">
               <MessageCenter />
+            </div>
+          )}
+
+          {currentView === 'premium' && (
+            <div className="space-y-6">
+              <PremiumFeatures />
             </div>
           )}
         </MainLayout>
