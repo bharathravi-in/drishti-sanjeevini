@@ -3,6 +3,7 @@ import { Search, TrendingUp, Users, Filter } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { PostFeed } from '../posts/PostFeed';
+import { FollowSuggestions } from '../follows/FollowSuggestions';
 import { ExploreSearch, SearchFilters } from '../posts/ExploreSearch';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -124,17 +125,15 @@ export function ExplorePage() {
       {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <Search className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Explore</h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Discover new content and connect with your community
-                </p>
-              </div>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Search className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Explore</h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Discover new content and connect with your community
+              </p>
             </div>
           </div>
         </CardHeader>
@@ -338,6 +337,8 @@ export function ExplorePage() {
 
       {activeTab === 'discover' && (
         <div className="space-y-6">
+          <FollowSuggestions />
+          
           <Card>
             <CardHeader>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -351,10 +352,10 @@ export function ExplorePage() {
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Coming Soon
+                  More features coming soon
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  User discovery and following features will be available soon
+                  Advanced user discovery and community features will be available soon
                 </p>
               </div>
             </CardContent>

@@ -9,6 +9,8 @@ import { ProfilePhotoUpload } from './ProfilePhotoUpload';
 import { CoverPhotoUpload } from './CoverPhotoUpload';
 import { FollowStats } from '../follows/FollowStats';
 import { FollowButton } from '../follows/FollowButton';
+import { BlockButton } from '../follows/BlockButton';
+import { FollowList } from '../follows/FollowList';
 import { DonationButton } from '../donations/DonationButton';
 import { StartConversationButton } from '../messaging/StartConversationButton';
 import { useAuth } from '../../context/AuthContext';
@@ -48,6 +50,7 @@ export function ProfileDetails({ viewingUserId, isPublicView = false }: ProfileD
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileUser, setProfileUser] = useState<any>(null);
+  const [showFollowList, setShowFollowList] = useState<{ type: 'followers' | 'following'; show: boolean }>({ type: 'followers', show: false });
   const [formData, setFormData] = useState<ExtendedProfileFormData>({
     full_name: '',
     interests: [],
@@ -332,7 +335,12 @@ export function ProfileDetails({ viewingUserId, isPublicView = false }: ProfileD
                   </div>
                   
                   <div className="flex items-center space-x-4 mb-3">
-                    <FollowStats userId={displayUser.id} />
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => setShowFollowList({ type: 'followers', show: true })}
+                    >
+                      <FollowStats userId={displayUser.id} />
+                    </div>
                     
                     {!isOwnProfile && (
                       <div className="flex items-center space-x-2">
@@ -354,6 +362,11 @@ export function ProfileDetails({ viewingUserId, isPublicView = false }: ProfileD
                           upiId={displayData.upi_id}
                           paypalEmail={displayData.paypal_email}
                           bankAccount={displayData.bank_account}
+                        />
+                        <BlockButton
+                          targetUserId={displayUser.id}
+                          targetUserName={displayData.full_name}
+                          size="sm"
                         />
                       </div>
                     )}
@@ -828,6 +841,14 @@ export function ProfileDetails({ viewingUserId, isPublicView = false }: ProfileD
           )}
         </>
       )}
+
+      {/* Follow List Modal */}
+      <FollowList
+        userId={displayUser.id}
+        type={showFollowList.type}
+        isOpen={showFollowList.show}
+        onClose={() => setShowFollowList({ type: 'followers', show: false })}
+      />
     </div>
   );
 }

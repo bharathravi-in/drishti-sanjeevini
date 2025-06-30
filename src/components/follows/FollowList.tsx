@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserCheck, ArrowLeft, Search, X } from 'lucide-react';
+import { Users, UserCheck, Search, X, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -7,77 +7,88 @@ import { FollowButton } from './FollowButton';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
-interface FollowUser {
-  id: string;
-  full_name: string;
-  profile_photo_url?: string;
-  role: 'seeker' | 'supporter';
-  followed_at: string;
-}
-
 interface FollowListProps {
   userId: string;
-  userName: string;
   type: 'followers' | 'following';
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function FollowList({ userId, userName, type, isOpen, onClose }: FollowListProps) {
+interface FollowUser {
+  id: string;
+  full_name: string;
+  username: string;
+  profile_photo_url: string;
+  role: 'seeker' | 'supporter';
+  created_at: string;
+}
+
+export function FollowList({ userId, type, isOpen, onClose }: FollowListProps) {
   const { user } = useAuth();
   const [users, setUsers] = useState<FollowUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<FollowUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchUsers = async () => {
+    if (!isOpen) return;
+
     try {
       setLoading(true);
       
-      const functionName = type === 'followers' ? 'get_user_followers' : 'get_user_following';
-      const { data, error } = await supabase.rpc(functionName, {
-        user_id: userId,
-        limit_count: 100
-      });
+      let query;
+      if (type === 'followers') {
+        query = supabase
+          .from('follows')
+          .select(`
+            follower:users!follower_id(
+              id, full_name, username, profile_photo_url, role, created_at
+            )
+          `)
+          .eq('following_id', userId);
+      } else {
+        query = supabase
+          .from('follows')
+          .select(`
+            following:users!following_id(
+              id, full_name, username, profile_photo_url, role, created_at
+            )
+          `)
+          .eq('follower_id', userId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      const mappedUsers = (data || []).map((item: any) => ({
-        id: type === 'followers' ? item.follower_id : item.following_id,
-        full_name: type === 'followers' ? item.follower_name : item.following_name,
-        profile_photo_url: type === 'followers' ? item.follower_avatar : item.following_avatar,
-        role: type === 'followers' ? item.follower_role : item.following_role,
-        followed_at: item.followed_at
-      }));
-      
-      setUsers(mappedUsers);
+
+      const userList = data?.map(item => 
+        type === 'followers' ? item.follower : item.following
+      ).filter(Boolean) || [];
+
+      setUsers(userList);
+      setFilteredUsers(userList);
     } catch (error) {
-      console.error(`Error fetching ${type}:`, error);
+      console.error('Error fetching follow list:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (isOpen) {
-      fetchUsers();
+    fetchUsers();
+  }, [userId, type, isOpen]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const filtered = users.filter(user =>
+        user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+    } else {
+      setFilteredUsers(users);
     }
-  }, [isOpen, userId, type]);
-
-  const filteredUsers = users.filter(u =>
-    u.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return date.toLocaleDateString();
-  };
+  }, [searchQuery, users]);
 
   if (!isOpen) return null;
 
@@ -87,95 +98,77 @@ export function FollowList({ userId, userName, type, isOpen, onClose }: FollowLi
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onClose}
-                className="p-1 h-6 w-6"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div className="flex items-center space-x-2">
-                {type === 'followers' ? (
-                  <Users className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <UserCheck className="w-5 h-5 text-green-600" />
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {userName}'s {type === 'followers' ? 'Followers' : 'Following'}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {users.length} {type === 'followers' ? 'followers' : 'following'}
-                  </p>
-                </div>
-              </div>
+              {type === 'followers' ? (
+                <Users className="w-5 h-5 text-blue-600" />
+              ) : (
+                <UserCheck className="w-5 h-5 text-green-600" />
+              )}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {type === 'followers' ? 'Followers' : 'Following'} ({users.length})
+              </h3>
             </div>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
           </div>
-        </CardHeader>
-
-        <CardContent className="flex-1 overflow-hidden flex flex-col">
+          
           {/* Search */}
-          <div className="relative mb-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={`Search ${type}...`}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Search users..."
+              className="pl-10"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
+        </CardHeader>
 
-          {/* Users List */}
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="animate-pulse flex items-center space-x-3 p-3">
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-8">
-                {type === 'followers' ? (
-                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                ) : (
-                  <UserCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                )}
-                <h4 className="font-medium text-gray-900 dark:text-white mb-1">
-                  {searchQuery ? 'No users found' : `No ${type} yet`}
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {searchQuery 
-                    ? 'Try a different search term' 
-                    : `${userName} ${type === 'followers' ? "doesn't have any followers" : "isn't following anyone"} yet`
-                  }
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredUsers.map((followUser) => (
-                  <div
-                    key={followUser.id}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+        <CardContent className="flex-1 overflow-y-auto p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-8">
+              {searchQuery ? (
+                <>
+                  <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No users found
+                  </h4>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Try a different search term
+                  </p>
+                </>
+              ) : (
+                <>
+                  {type === 'followers' ? (
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  ) : (
+                    <UserCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  )}
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No {type} yet
+                  </h4>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {type === 'followers' 
+                      ? 'No one is following this user yet'
+                      : 'This user isn\'t following anyone yet'
+                    }
+                  </p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+              {filteredUsers.map((followUser) => (
+                <div key={followUser.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
                       {/* User Avatar */}
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full overflow-hidden">
                         {followUser.profile_photo_url ? (
                           <img
                             src={followUser.profile_photo_url}
@@ -190,40 +183,40 @@ export function FollowList({ userId, userName, type, isOpen, onClose }: FollowLi
                           </div>
                         )}
                       </div>
-
+                      
                       {/* User Info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-gray-900 dark:text-white truncate">
                           {followUser.full_name}
                         </h4>
-                        <div className="flex items-center space-x-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
+                        <div className="flex items-center space-x-2 text-xs">
+                          {followUser.username && (
+                            <span className="text-gray-500">@{followUser.username}</span>
+                          )}
+                          <span className={`px-2 py-1 rounded-full ${
                             followUser.role === 'seeker' 
                               ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
                               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                           }`}>
-                            {followUser.role === 'seeker' ? 'Seeking Help' : 'Offering Help'}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {formatTimeAgo(followUser.followed_at)}
+                            {followUser.role === 'seeker' ? 'Seeking' : 'Helping'}
                           </span>
                         </div>
                       </div>
                     </div>
-
+                    
                     {/* Follow Button */}
-                    <div className="flex-shrink-0 ml-3">
+                    {user && user.id !== followUser.id && (
                       <FollowButton
                         targetUserId={followUser.id}
                         targetUserName={followUser.full_name}
                         size="sm"
                       />
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
