@@ -45,3 +45,47 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Hide Bolt.new badge */
+[data-bolt-badge],
+.bolt-badge,
+#bolt-badge,
+iframe[src*="bolt"],
+div[class*="bolt"],
+a[href*="bolt.new"],
+*[class*="built-with-bolt"],
+*[id*="bolt-badge"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Additional badge hiding rules */
+body::after,
+body::before,
+html::after,
+html::before {
+  content: none !important;
+}
+
+/* Hide any floating badges */
+div[style*="position: fixed"],
+div[style*="position: absolute"] {
+  z-index: -1 !important;
+}
+
+/* Specific targeting for common badge patterns */
+*[class*="badge"]:not(.notification-badge):not(.user-badge):not(.status-badge) {
+  display: none !important;
+}
+
+/* Hide watermarks */
+*[class*="watermark"],
+*[id*="watermark"] {
+  display: none !important;
+}
